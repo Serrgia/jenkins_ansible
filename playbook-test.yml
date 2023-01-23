@@ -1,0 +1,56 @@
+---
+- name: Deploy app
+  hosts: server_test
+  become: yes
+
+  tasks:
+    - name: install packages
+      apt: name={{ item }} state=latest
+      loop:
+        - python3-venv
+        - python3-dev
+        - python3-pip
+        - default-libmysqlclient-dev
+        - build-essential
+        - git
+
+    - name: create a directory
+      ansible.builtin.file:
+        path: "/home/user/app"
+        state: directory
+        mode: '0755'
+      
+    - name: copy app from GitHub
+      ansible.builtin.git:
+        repo: https://github.com/Serrgia/final_lab.git
+        dest: "/home/user/app"
+        version: master
+    
+    - name: copy folder
+      ansible.builtin.copy:
+        src: "/home/user/app/django/clicker"
+        dest: /home/user/app
+        
+    - name: create virtual environment
+      ansible.builtin.shell: python3 -m venv app_1
+      args:
+        chdir: /home/user/app/
+        
+    - name: activate virtual environment
+      ansible.builtin.shell: source /home/user/app/app_1/bin/activate
+      args:
+        executable: /usr/bin/bash
+    
+    - name: install python packages with pip
+      ansible.builtin.pip:
+        name:
+          - mysql-connector-python
+          - django
+          - mysqlclient
+        state: latest
+ 
+    - name: starting app
+      ansible.builtin.shell: python3 /home/user/app/clicker/manage.py runserver
+      args:
+        executable: /usr/bin/bash
+
